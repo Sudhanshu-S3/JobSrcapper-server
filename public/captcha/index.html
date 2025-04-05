@@ -1,0 +1,110 @@
+\captcha\index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual CAPTCHA Solver</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .captcha-container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        img {
+            max-width: 100%;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 8px;
+            width: 300px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Manual CAPTCHA Solver</h1>
+    <p>Please solve the CAPTCHA image below to help with web scraping</p>
+
+    <div class="captcha-container">
+        <img id="captchaImage" src="/current-captcha.png" alt="CAPTCHA Image">
+        <div>
+            <input type="text" id="captchaSolution" placeholder="Enter CAPTCHA solution...">
+            <button id="submitBtn">Submit Solution</button>
+        </div>
+    </div>
+
+    <div class="status" id="status">Waiting for input...</div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const captchaImage = document.getElementById('captchaImage');
+        const captchaSolution = document.getElementById('captchaSolution');
+        const submitBtn = document.getElementById('submitBtn');
+        const status = document.getElementById('status');
+
+        // Handle new CAPTCHA
+        socket.on('newCaptcha', (data) => {
+            captchaImage.src = data.path + '?t=' + new Date().getTime();
+            captchaSolution.value = '';
+            status.textContent = 'New CAPTCHA received. Please solve it.';
+        });
+
+        // Submit solution
+        submitBtn.addEventListener('click', () => {
+            const solution = captchaSolution.value.trim();
+            if (solution) {
+                socket.emit('captchaSolved', solution);
+                status.textContent = 'Solution submitted. Waiting for new CAPTCHA...';
+            } else {
+                status.textContent = 'Please enter a solution first!';
+            }
+        });
+
+        // Allow pressing Enter to submit
+        captchaSolution.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitBtn.click();
+            }
+        });
+    </script>
+</body>
+
+</html>
