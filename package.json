@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "render-build": "npm install puppeteer"
+    "render-build": "mkdir -p public && npm install puppeteer"
   },
   "keywords": [
     "linkedin",
