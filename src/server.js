@@ -21,7 +21,9 @@ app.use(limiter);   // Rate limiting
 app.use(cors({
     origin: process.env.FRONTEND_URL || [
         'https://sudhanshu-s3.github.io/JobSrcapper-client/',
-        'http://localhost:3000'
+        'https://sudhanshu-s3.github.io',
+        'http://localhost:3000',
+        /\.vercel\.app$/  // Allow all Vercel preview deployments
     ],
     methods: ['GET', 'POST'],
     credentials: true
@@ -52,10 +54,15 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
-app.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
-});
+// Start server only if not being imported
+if (require.main === module) {
+    app.listen(PORT, () => {
+        logger.info(`Server running on port ${PORT}`);
+    });
+}
+
+// Export for serverless use
+module.exports = app;
 
 // Handle process termination
 process.on('SIGTERM', shutdown);

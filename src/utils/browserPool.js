@@ -6,15 +6,26 @@ class BrowserPool {
         this.maxPoolSize = options.maxPoolSize || 3;
         this.idleBrowsers = [];
         this.activeBrowsers = 0;
+
+        // Enhanced browser options for Render deployment
         this.browserOptions = {
             headless: true,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-gpu',
-                '--disable-dev-shm-usage'
+                '--disable-dev-shm-usage',
+                '--single-process',
+                '--disable-extensions',
+                '--no-zygote'
             ]
         };
+
+        // Specific configuration for Render.com
+        if (process.env.RENDER) {
+            logger.info('Running on Render.com - applying specific configurations');
+            this.browserOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+        }
     }
 
     async acquire() {

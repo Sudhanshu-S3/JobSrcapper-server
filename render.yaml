@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: job-aggregator-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://sudhanshu-s3.github.io
+    healthCheckPath: /
+    plan: free
+    autoDeploy: true
+    pullRequestPreviewsEnabled: true
