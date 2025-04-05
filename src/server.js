@@ -29,7 +29,13 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+
+// Update static file paths to include src directory for Render deployment
+if (process.env.RENDER) {
+    app.use(express.static(path.join(__dirname, 'public')));
+} else {
+    app.use(express.static(path.join(__dirname, '../public')));
+}
 
 // Log all requests
 app.use((req, res, next) => {
@@ -40,9 +46,13 @@ app.use((req, res, next) => {
 // API Routes
 app.use('/api/jobs', jobRoutes);
 
-// Serve the frontend
+// Serve the frontend with updated path handling for Render
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'index.html'));
+    if (process.env.RENDER) {
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    } else {
+        res.sendFile(path.join(__dirname, '../public', 'index.html'));
+    }
 });
 
 // Error handling middleware
