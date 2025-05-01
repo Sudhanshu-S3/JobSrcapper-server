@@ -17,17 +17,39 @@ const PORT = process.env.PORT || 5050;
 app.use(helmet());  // Adds security headers
 app.use(limiter);   // Rate limiting
 
-// Updated CORS configuration with explicit origins
+// Better CORS configuration with proper multiple origin handling
+const allowedOrigins = [
+    'https://sudhanshu-s3.github.io',
+    'https://sudhanshu-s3.github.io/JobSrcapper-client',
+    'https://sudhanshu-s3.github.io/JobSrcapper-client/', // with trailing slash
+    'http://localhost:3000'
+];
+
+// Add FRONTEND_URL from env if it exists
+if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+    // Also add version without trailing slash
+    if (process.env.FRONTEND_URL.endsWith('/')) {
+        allowedOrigins.push(process.env.FRONTEND_URL.slice(0, -1));
+    }
+}
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || [
-        'https://sudhanshu-s3.github.io',
-        'https://sudhanshu-s3.github.io/JobSrcapper-client',
-        'http://localhost:3000'
-    ],
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, postman)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = `The CORS policy for this site does not allow access from the specified origin: ${origin}`;
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 
 // Update static file paths to include src directory for Render deployment
