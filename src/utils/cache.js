@@ -1,42 +1,70 @@
+/**
+ * Simple in-memory cache implementation
+ */
 class Cache {
     constructor() {
-        this.cache = new Map();
-        this.timestamps = new Map();
-
-        // Run cleanup every 15 minutes
-        setInterval(() => this.cleanup(), 15 * 60 * 1000);
+        this.items = {};
+        this.timeouts = {};
     }
 
+    /**
+     * Get an item from cache
+     * @param {string} key - Cache key
+     * @returns {*} - Cached item or null if not found/expired
+     */
     get(key) {
-        // Check if key exists and hasn't expired
-        if (this.cache.has(key)) {
-            const timestamp = this.timestamps.get(key);
-            if (timestamp > Date.now()) {
-                return this.cache.get(key);
-            } else {
-                // If expired, remove it
-                this.cache.delete(key);
-                this.timestamps.delete(key);
-            }
-        }
-        return null;
+        return this.items[key] || null;
     }
 
-    set(key, value, ttlSeconds = 3600) {
-        this.cache.set(key, value);
-        // Store expiration timestamp
-        this.timestamps.set(key, Date.now() + (ttlSeconds * 1000));
+    /**
+     * Set an item in cache
+     * @param {string} key - Cache key
+     * @param {*} value - Value to store
+     * @param {number} ttlSeconds - Time to live in seconds
+     */
+    set(key, value, ttlSeconds) {
+        this.items[key] = value;
+
+        // Clear any existing timeout
+        if (this.timeouts[key]) {
+            clearTimeout(this.timeouts[key]);
+        }
+
+        // Set expiration
+        if (ttlSeconds) {
+            this.timeouts[key] = setTimeout(() => {
+                this.delete(key);
+            }, ttlSeconds * 1000);
+        }
     }
 
-    cleanup() {
-        const now = Date.now();
-        for (const [key, timestamp] of this.timestamps.entries()) {
-            if (timestamp <= now) {
-                this.cache.delete(key);
-                this.timestamps.delete(key);
-            }
+    /**
+     * Delete an item from cache
+     * @param {string} key - Cache key
+     */
+    delete(key) {
+        delete this.items[key];
+
+        if (this.timeouts[key]) {
+            clearTimeout(this.timeouts[key]);
+            delete this.timeouts[key];
         }
+    }
+
+    /**
+     * Clear all items from cache
+     */
+    clear() {
+        this.items = {};
+
+        // Clear all timeouts
+        Object.keys(this.timeouts).forEach(key => {
+            clearTimeout(this.timeouts[key]);
+        });
+
+        this.timeouts = {};
     }
 }
 
+// Export a singleton instance
 module.exports = new Cache();

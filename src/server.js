@@ -11,22 +11,22 @@ const browserPool = require('./services/job.service').getBrowserPool();
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5050;
 
 // Apply security middlewares
 app.use(helmet());  // Adds security headers
 app.use(limiter);   // Rate limiting
 
-// Basic middlewares
+// Updated CORS configuration with explicit origins
 app.use(cors({
     origin: process.env.FRONTEND_URL || [
-        'https://sudhanshu-s3.github.io/JobSrcapper-client/',
         'https://sudhanshu-s3.github.io',
-        'http://localhost:3000',
-        /\.vercel\.app$/  // Allow all Vercel preview deployments
+        'https://sudhanshu-s3.github.io/JobSrcapper-client',
+        'http://localhost:3000'
     ],
-    methods: ['GET', 'POST'],
-    credentials: true
+    methods: ['GET', 'POST', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
@@ -42,6 +42,9 @@ app.use((req, res, next) => {
     logger.info(`${req.method} ${req.url}`);
     next();
 });
+
+// Pre-flight OPTIONS request handler for CORS
+app.options('*', cors());
 
 // API Routes
 app.use('/api/jobs', jobRoutes);

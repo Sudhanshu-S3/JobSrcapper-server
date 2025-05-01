@@ -1,50 +1,72 @@
-const fs = require('fs');
-const path = require('path');
+/**
+ * Simple logging utility
+ */
+class Logger {
+    constructor() {
+        this.logLevels = {
+            ERROR: 0,
+            WARN: 1,
+            INFO: 2,
+            DEBUG: 3
+        };
 
-// Ensure logs directory exists
-const logsDir = path.join(__dirname, '../../logs');
-if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir, { recursive: true });
-}
-
-// Create write streams
-const accessLogStream = fs.createWriteStream(
-    path.join(logsDir, 'access.log'),
-    { flags: 'a' }
-);
-
-const errorLogStream = fs.createWriteStream(
-    path.join(logsDir, 'error.log'),
-    { flags: 'a' }
-);
-
-// Format date for logs
-function formatDate() {
-    return new Date().toISOString();
-}
-
-// Logger implementation
-const logger = {
-    info(message, ...args) {
-        const logEntry = `[${formatDate()}] INFO: ${message}`;
-        console.log(logEntry);
-        if (args.length) console.log(...args);
-        accessLogStream.write(logEntry + (args.length ? ` ${JSON.stringify(args)}` : '') + '\n');
-    },
-
-    warn(message, ...args) {
-        const logEntry = `[${formatDate()}] WARN: ${message}`;
-        console.warn(logEntry);
-        if (args.length) console.warn(...args);
-        accessLogStream.write(logEntry + (args.length ? ` ${JSON.stringify(args)}` : '') + '\n');
-    },
-
-    error(message, ...args) {
-        const logEntry = `[${formatDate()}] ERROR: ${message}`;
-        console.error(logEntry);
-        if (args.length) console.error(...args);
-        errorLogStream.write(logEntry + (args.length ? ` ${JSON.stringify(args)}` : '') + '\n');
+        // Set default log level based on environment
+        this.level = process.env.NODE_ENV === 'production'
+            ? this.logLevels.INFO
+            : this.logLevels.DEBUG;
     }
-};
 
-module.exports = logger;
+    /**
+     * Format log message with timestamp
+     * @param {string} level - Log level
+     * @param {string} message - Log message
+     * @returns {string} - Formatted log message
+     */
+    _formatMessage(level, message) {
+        const timestamp = new Date().toISOString();
+        return `[${timestamp}] [${level}] ${message}`;
+    }
+
+    /**
+     * Log error message
+     * @param {...any} args - Arguments to log
+     */
+    error(...args) {
+        if (this.level >= this.logLevels.ERROR) {
+            console.error(this._formatMessage('ERROR', args.join(' ')));
+        }
+    }
+
+    /**
+     * Log warning message
+     * @param {...any} args - Arguments to log
+     */
+    warn(...args) {
+        if (this.level >= this.logLevels.WARN) {
+            console.warn(this._formatMessage('WARN', args.join(' ')));
+        }
+    }
+
+    /**
+     * Log info message
+     * @param {...any} args - Arguments to log
+     */
+    info(...args) {
+        if (this.level >= this.logLevels.INFO) {
+            console.info(this._formatMessage('INFO', args.join(' ')));
+        }
+    }
+
+    /**
+     * Log debug message
+     * @param {...any} args - Arguments to log
+     */
+    debug(...args) {
+        if (this.level >= this.logLevels.DEBUG) {
+            console.debug(this._formatMessage('DEBUG', args.join(' ')));
+        }
+    }
+}
+
+// Export a singleton instance
+module.exports = new Logger();

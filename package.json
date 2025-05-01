@@ -1,17 +1,17 @@
 {
   "name": "job-aggregator",
   "version": "1.0.0",
-  "description": "Job aggregator that scrapes from LinkedIn, Wellfound, and Unstop",
+  "description": "Job aggregator that scrapes from LinkedIn",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "render-build": "mkdir -p public && npm install puppeteer"
+    "render-build": "mkdir -p public && npm install puppeteer",
+    "postinstall": "node -e \"try { require('puppeteer').launch({headless: 'new'}) } catch(e) { console.log('Puppeteer not installed, skipping.') }\"",
+    "install-puppeteer": "node install.js --force-chromium"
   },
   "keywords": [
     "linkedin",
-    "wellfound",
-    "unstop",
     "scraper",
     "jobs",
     "puppeteer",

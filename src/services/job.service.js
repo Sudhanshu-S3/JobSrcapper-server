@@ -1,13 +1,14 @@
 const BrowserPool = require('../utils/browserPool');
 const scrapersConfig = require('../config/scrapers');
-const cache = require('../utils/cache');
 const logger = require('../utils/logger');
+const cache = require('../utils/cache');
+const { normalizePostedDate } = require('../utils/scrape-helpers');
 
 // Initialize browser pool
 const browserPool = new BrowserPool({ maxPoolSize: 3 });
 
-// Available scraping sources
-const availableSources = ['linkedin', 'wellfound', 'unstop'];
+// Available scraping sources - LinkedIn only
+const availableSources = ['linkedin'];
 
 // Export the browser pool for shutdown handling
 exports.getBrowserPool = () => browserPool;
@@ -17,7 +18,10 @@ exports.getAvailableSources = () => availableSources;
 
 // Main job aggregation service
 exports.aggregateJobs = async (searchQuery, location, jobType, sources = availableSources) => {
-    const cacheKey = `${searchQuery}-${location}-${jobType}-${sources.sort().join(',')}`;
+    // Force sources to be only LinkedIn
+    sources = ['linkedin'];
+
+    const cacheKey = `${searchQuery}-${location}-${jobType}-linkedin`;
 
     // Try to get from cache first
     const cachedResults = cache.get(cacheKey);
@@ -26,8 +30,7 @@ exports.aggregateJobs = async (searchQuery, location, jobType, sources = availab
         return cachedResults;
     }
 
-    logger.info(`Aggregating jobs for: ${searchQuery} in ${location}, type: ${jobType}`);
-    logger.info(`Sources: ${sources.join(', ')}`);
+    logger.info(`Searching LinkedIn jobs for: ${searchQuery} in ${location}, type: ${jobType}`);
 
     let allJobs = [];
 
@@ -35,34 +38,29 @@ exports.aggregateJobs = async (searchQuery, location, jobType, sources = availab
     const browser = await browserPool.acquire();
 
     try {
-        // Run selected scrapers in parallel
-        const scrapingPromises = [];
+        // Only use LinkedIn scraper
+        const scraper = require('../scrapers/linkedin.scraper');
 
-        // Filter valid sources
-        const validSources = sources.filter(source => availableSources.includes(source));
+        const jobs = await scraper.scrapeJobs(browser, searchQuery, location, jobType)
+            .then(jobs => {
+                logger.info(`LinkedIn: Found ${jobs.length} job listings`);
+                return jobs.map(job => ({ ...job, source: 'LinkedIn' }));
+            })
+            .catch(err => {
+                logger.error(`LinkedIn scraping error:`, err);
+                return []; // Return empty array on error
+            });
 
-        for (const source of validSources) {
-            const scraper = require(`../scrapers/${source}.scraper`);
-            scrapingPromises.push(
-                scraper.scrapeJobs(browser, searchQuery, location, jobType)
-                    .then(jobs => {
-                        logger.info(`${source}: Found ${jobs.length} job listings`);
-                        return jobs.map(job => ({ ...job, source: source.charAt(0).toUpperCase() + source.slice(1) }));
-                    })
-                    .catch(err => {
-                        logger.error(`${source} scraping error:`, err);
-                        return []; // Return empty array on error
-                    })
-            );
-        }
+        allJobs = jobs;
 
-        // Wait for all scrapers to complete
-        const results = await Promise.all(scrapingPromises);
+        // Sort jobs by posting date (newest first)
+        allJobs.sort((a, b) => {
+            const dateA = normalizePostedDate(a.posted);
+            const dateB = normalizePostedDate(b.posted);
+            return dateA - dateB; // Lower values (more recent) come first
+        });
 
-        // Combine all results
-        allJobs = results.flat();
-
-        logger.info(`Total aggregated jobs: ${allJobs.length}`);
+        logger.info(`Total jobs found: ${allJobs.length}, sorted by posting date`);
 
         // Store in cache for 30 minutes
         cache.set(cacheKey, allJobs, 30 * 60); // 30 minutes in seconds
