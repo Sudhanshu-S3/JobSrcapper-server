@@ -150,44 +150,23 @@ class BrowserPool {
                     '--disable-accelerated-2d-canvas',
                     '--disable-gpu',
                     '--window-size=1920,1080',
-                    '--single-process', // Add this
-                    '--no-zygote',      // Add this
-                    '--disable-extensions' // Add this
+                    '--single-process',
+                    '--no-zygote',
+                    '--disable-extensions'
                 ],
                 ignoreHTTPSErrors: true
             };
 
-            try {
-                // First attempt: Try using bundled Chromium
-                return await puppeteer.launch(launchOptions);
-            } catch (error) {
-                // If bundled Chromium fails, try to find installed Chrome
-                logger.warn('Failed to launch with bundled Chromium, trying to detect system Chrome...');
-
-                const executablePath = this._findChromeExecutable();
-
-                if (!executablePath) {
-                    throw new Error('Could not find Chrome or Chromium installed on the system. Please install Google Chrome and try again.');
-                }
-
-                logger.info(`Found Chrome at: ${executablePath}`);
-
-                // Launch with detected Chrome
-                return await puppeteer.launch({
-                    ...launchOptions,
-                    executablePath,
-                    channel: path.basename(executablePath).toLowerCase().includes('edge') ? 'msedge' : undefined
-                });
+            // Special handling for Render deployment
+            if (process.env.RENDER) {
+                logger.info('Running in Render environment, using installed Chrome');
+                launchOptions.executablePath = '/usr/bin/google-chrome';
             }
+
+            return await puppeteer.launch(launchOptions);
         } catch (error) {
             logger.error('Failed to launch browser:', error.message);
-
-            // Provide helpful error message
-            const errorMsg = `Browser launch failed: ${error.message}\n` +
-                'Please ensure that Google Chrome is installed on your system.\n' +
-                'If you continue to have issues, try running: npm run install-puppeteer';
-
-            throw new Error(errorMsg);
+            throw new Error(`Browser launch failed: ${error.message}`);
         }
     }
 

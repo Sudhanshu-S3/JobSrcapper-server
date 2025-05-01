@@ -17,9 +17,18 @@ apt-get update && apt-get install -y \
   libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 \
   libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 \
   libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 \
-  libnss3 lsb-release xdg-utils wget || true
+  libnss3 lsb-release xdg-utils wget
+
+# Install Chrome browser
+echo "Installing Chrome browser..."
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+apt-get install -y ./google-chrome-stable_current_amd64.deb
+rm google-chrome-stable_current_amd64.deb
 
 # Create a public directory if it doesn't exist
 mkdir -p src/public
+
+echo "Chrome version installed:"
+google-chrome --version
 
 echo "Build completed successfully!"

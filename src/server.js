@@ -72,8 +72,24 @@ app.use((req, res, next) => {
     next();
 });
 
-// Pre-flight OPTIONS request handler for CORS
-app.options('*', cors());
+// Handle OPTIONS requests separately and quickly
+app.options('*', (req, res) => {
+    const origin = req.headers.origin;
+
+    // Check if origin is allowed
+    if (!origin || allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin || '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        return res.status(204).end();
+    }
+
+    // Return 403 for disallowed origins
+    res.status(403).json({
+        error: `CORS not allowed from origin: ${origin}`
+    });
+});
 
 // API Routes
 app.use('/api/jobs', jobRoutes);

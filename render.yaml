@@ -8,6 +8,11 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        value: https://sudhanshu-s3.github.io/JobSrcapper-client/
+        value: https://sudhanshu-s3.github.io/JobSrcapper-client
       - key: RENDER
         value: true
+    plan: standard # upgrade from free tier
+    disk:
+      name: puppeteer-cache
+      mountPath: /opt/render/project/src/.cache
+      sizeGB: 1
