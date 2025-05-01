@@ -8,10 +8,6 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        value: https://sudhanshu-s3.github.io
+        value: https://sudhanshu-s3.github.io/JobSrcapper-client/
       - key: RENDER
         value: true
-    healthCheckPath: /
-    plan: free # Consider upgrading to a paid plan for better resources
-    autoDeploy: true
-    pullRequestPreviewsEnabled: true
