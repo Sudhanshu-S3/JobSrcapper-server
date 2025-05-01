@@ -12,6 +12,6 @@ services:
       - key: RENDER
         value: true
     healthCheckPath: /
-    plan: free
+    plan: free # Consider upgrading to a paid plan for better resources
     autoDeploy: true
     pullRequestPreviewsEnabled: true

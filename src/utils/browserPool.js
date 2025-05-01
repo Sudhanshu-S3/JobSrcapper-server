@@ -150,6 +150,9 @@ class BrowserPool {
                     '--disable-accelerated-2d-canvas',
                     '--disable-gpu',
                     '--window-size=1920,1080',
+                    '--single-process', // Add this
+                    '--no-zygote',      // Add this
+                    '--disable-extensions' // Add this
                 ],
                 ignoreHTTPSErrors: true
             };

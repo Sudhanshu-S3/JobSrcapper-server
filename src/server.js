@@ -5,6 +5,7 @@ const logger = require('./utils/logger');
 const jobRoutes = require('./routes/job.routes');
 const { helmet, limiter } = require('./middlewares/security');
 const BrowserPool = require('./utils/browserPool');
+const timeout = require('connect-timeout'); // Add at the top, after other requires
 
 // Get reference to the browser pool instance used in job service
 const browserPool = require('./services/job.service').getBrowserPool();
@@ -51,6 +52,12 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// Add before your routes
+app.use(timeout('120s')); // Set a 2-minute timeout
+app.use((req, res, next) => {
+    if (!req.timedout) next();
+});
 
 // Update static file paths to include src directory for Render deployment
 if (process.env.RENDER) {

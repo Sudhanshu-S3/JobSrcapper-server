@@ -12,8 +12,16 @@ exports.scrapeJobs = async (req, res) => {
             return res.status(400).json({ success: false, error: validationError });
         }
 
-        // Get jobs from service
-        const jobListings = await jobService.aggregateJobs(searchQuery, location, jobType, sources);
+        // Set a timeout of 2 minutes
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Scraping operation timed out')), 120000);
+        });
+
+        // Race between normal operation and timeout
+        const jobListings = await Promise.race([
+            jobService.aggregateJobs(searchQuery, location, jobType, sources),
+            timeoutPromise
+        ]);
 
         // Return response
         res.json({ success: true, data: jobListings });
